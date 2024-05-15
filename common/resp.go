@@ -1,0 +1,35 @@
+package common
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+type Response struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}
+
+// PageResult 分页结果返回
+type PageResult struct {
+	Total int64       `json:"total"`
+	List  interface{} `json:"list"`
+}
+
+// Success 请求成功返回
+func Success(c *gin.Context, data interface{}) {
+	c.JSON(http.StatusOK, Response{200, "", data})
+}
+
+// Failed 请求失败返回
+func Failed(c *gin.Context, message string) {
+	c.JSON(http.StatusOK, Response{400, message, 0})
+}
+
+// SuccessPage 请求成功返回分页结果
+func SuccessPage(message string, data interface{}, rows int64, c *gin.Context) {
+	page := &PageResult{Total: rows, List: data}
+	c.JSON(http.StatusOK, Response{200, message, page})
+}

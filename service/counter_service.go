@@ -7,61 +7,49 @@ import (
 	"net/http"
 	"time"
 
+	"wxcloudrun-golang/common"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-// JsonResult 返回结构
-type JsonResult struct {
-	Code     int         `json:"code"`
-	ErrorMsg string      `json:"errorMsg,omitempty"`
-	Data     interface{} `json:"data"`
-}
-
 // IndexHandler 计数器接口
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
+func IndexHandler(ctx *gin.Context) {
 	data, err := getIndex()
 	if err != nil {
-		fmt.Fprint(w, "内部错误")
+		common.Failed(ctx, err.Error())
 		return
 	}
-	fmt.Fprint(w, data)
+	common.Success(ctx, data)
 }
 
 // CounterHandler 计数器接口
-func CounterHandler(w http.ResponseWriter, r *http.Request) {
-	res := &JsonResult{}
+func CounterHandler(ctx *gin.Context) {
 
-	if r.Method == http.MethodGet {
+	if ctx.Request.Method == http.MethodGet {
 		counter, err := getCurrentCounter()
 		if err != nil {
-			res.Code = -1
-			res.ErrorMsg = err.Error()
+			common.Failed(ctx, err.Error())
+			return
 		} else {
-			res.Data = counter.Count
+			common.Success(ctx, counter.Count)
+			return
 		}
-	} else if r.Method == http.MethodPost {
-		count, err := modifyCounter(r)
+	} else if ctx.Request.Method == http.MethodPost {
+		count, err := modifyCounter(ctx.Request)
 		if err != nil {
-			res.Code = -1
-			res.ErrorMsg = err.Error()
+			common.Failed(ctx, err.Error())
+			return
 		} else {
-			res.Data = count
+			common.Success(ctx, count)
+			return
 		}
 	} else {
-		res.Code = -1
-		res.ErrorMsg = fmt.Sprintf("请求方法 %s 不支持", r.Method)
-	}
-
-	msg, err := json.Marshal(res)
-	if err != nil {
-		fmt.Fprint(w, "内部错误")
+		common.Failed(ctx, fmt.Sprintf("请求方法 %s 不支持", ctx.Request.Method))
 		return
 	}
-	w.Header().Set("content-type", "application/json")
-	w.Write(msg)
 }
 
 // modifyCounter 更新计数，自增或者清零
