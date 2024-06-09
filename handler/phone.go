@@ -50,7 +50,7 @@ func GetPhone(c *gin.Context, req *GetPhoneParam) (*GetPhoneData, error) {
 		return nil, errors.New("获取返回信息失败，请重试")
 	}
 	fmt.Printf("get phone resp body: %s", string(respBody))
-	phone := gjson.Get(string(respBody), "phoneNumber").String()
+	phone := gjson.Get(gjson.Get(string(respBody), "data_list.0.json").String(), "data.phoneNumber").String()
 	fmt.Println(phone)
 	return &GetPhoneData{Phone: phone}, nil
 }
