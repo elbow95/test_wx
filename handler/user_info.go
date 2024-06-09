@@ -14,7 +14,7 @@ import (
 type GetUserInfoParam struct{}
 
 type GetUserInfoData struct {
-	User *models.User
+	User *models.User `json:"user"`
 }
 
 func GetUserInfo(c *gin.Context, req *GetUserInfoParam) (*GetUserInfoData, error) {

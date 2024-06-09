@@ -74,6 +74,7 @@ func UserVo2Dto(u *db.User, stationMap map[int64]*db.Station) *models.User {
 	if station, ok := stationMap[u.StationId]; ok {
 		user.StationName = station.Name
 	}
+	user.PermissionList = common.UserPermissionMap[common.UserType(user.Type)]
 	return user
 }
 

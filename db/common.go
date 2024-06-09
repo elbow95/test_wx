@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type WhereFunc func(db *gorm.DB) *gorm.DB
@@ -13,6 +14,12 @@ func combineWhereFuncs(db *gorm.DB, whereFuncs ...WhereFunc) *gorm.DB {
 		db = whereFunc(db)
 	}
 	return db
+}
+
+func CreateUpdateAll(model interface{}) error {
+	return GetWrite().Clauses(
+		clause.OnConflict{UpdateAll: true},
+	).Create(&model).Error
 }
 
 func FindOneWithDb(db *gorm.DB, ret interface{}, whereFuncs ...WhereFunc) (bool, error) {

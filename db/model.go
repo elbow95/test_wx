@@ -25,6 +25,11 @@ func (m *User) TableName() string {
 	return "user"
 }
 
+type UserExtra struct {
+	License string `json:"license"`
+	Company string `json:"company"`
+}
+
 // 油站表
 type Station struct {
 	Id         int64     `gorm:"column:id;type:bigint(20) unsigned;primary_key;AUTO_INCREMENT;comment:主键id" json:"id"`

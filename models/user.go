@@ -15,6 +15,8 @@ type User struct {
 	Status      int    `json:"status"`
 	CreateTime  string `json:"create_time"`
 	UpdateTime  string `json:"update_time"`
+
+	PermissionList []string `json:"permission_list"`
 }
 
 type ListUserParam struct {
