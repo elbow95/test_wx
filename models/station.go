@@ -11,8 +11,8 @@ type Station struct {
 }
 
 type ListStationParam struct {
-	Ids  []int64 `json:"ids"`
-	Name string  `json:"name"`
+	Ids  []int64 `json:"ids" query:"ids"`
+	Name string  `json:"name" query:"name"`
 }
 
 type ListStationData struct {

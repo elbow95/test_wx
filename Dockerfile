@@ -8,6 +8,8 @@ ENV GO111MODULE=on \
     GOOS=linux \
     GOARCH=amd64
 
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
 # 指定构建过程中的工作目录
 WORKDIR /app
 
@@ -15,7 +17,7 @@ WORKDIR /app
 COPY . /app/
 
 # 执行代码编译命令。操作系统参数为linux，编译后的二进制产物命名为main，并存放在当前目录下。
-RUN GOOS=linux go build -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -v -o main .
 
 # 选用运行时所用基础镜像（GO语言选择原则：尽量体积小、包含基础linux内容的基础镜像）
 FROM alpine:3.13
@@ -35,4 +37,5 @@ COPY --from=builder /app/main /app/index.html /app/
 # 执行启动命令
 # 写多行独立的CMD命令是错误写法！只有最后一行CMD命令会被执行，之前的都会被忽略，导致业务报错。
 # 请参考[Docker官方文档之CMD命令](https://docs.docker.com/engine/reference/builder/#cmd)
+# CMD ["/go/bin/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec","/app/main"]
 CMD ["/app/main"]

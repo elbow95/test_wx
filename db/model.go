@@ -1,4 +1,4 @@
-package model
+package db
 
 import (
 	"time"
@@ -7,11 +7,15 @@ import (
 // 用户表
 type User struct {
 	Id          int64     `gorm:"column:id;type:bigint(20) unsigned;primary_key;AUTO_INCREMENT;comment:主键id" json:"id"`
+	OpenId      string    `gorm:"column:open_id;type:varchar(255);comment:微信open_id;NOT NULL" json:"open_id"`
 	Name        string    `gorm:"column:name;type:varchar(255);comment:姓名;NOT NULL" json:"name"`
-	Type        int       `gorm:"column:type;type:tinyint(4);default:0;comment:类型 1-管理员 2-加油员 3-司机;NOT NULL" json:"type"`
-	StationId   int64     `gorm:"column:station_id;type:bigint(20);default:0;comment:所属油站;NOT NULL" json:"station_id"`
+	Type        int       `gorm:"column:type;type:tinyint(4);default:0;comment:类型 1-管理员 10-加油员 20-司机;NOT NULL" json:"type"`
+	StationId   int64     `gorm:"column:station_id;type:bigint(20) ;comment:所属油站id" json:"station_id"`
 	Phone       string    `gorm:"column:phone;type:varchar(255);comment:手机号;NOT NULL" json:"phone"`
 	PlateNumber string    `gorm:"column:plate_number;type:varchar(255);comment:车牌号;NOT NULL" json:"plate_number"`
+	Avatar      string    `gorm:"column:avatar;type:varchar(255);comment:用户头像;NOT NULL" json:"avatar"`
+	Extra       string    `gorm:"column:extra;type:text;comment:冗余信息" json:"extra"`
+	Status      int       `gorm:"column:status;type:tinyint(4);default:0;comment:状态 1-正常 2-待验证;NOT NULL" json:"status"`
 	IsDelete    int       `gorm:"column:is_delete;type:tinyint(4);default:0;comment:是否删除;NOT NULL" json:"is_delete"`
 	CreateTime  time.Time `gorm:"->" json:"create_time"`
 	UpdateTime  time.Time `gorm:"->" json:"update_time"`

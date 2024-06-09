@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"fmt"
+	"errors"
+	"log"
 	"wxcloudrun-golang/common"
 	"wxcloudrun-golang/models"
 	"wxcloudrun-golang/service"
@@ -9,83 +10,52 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ListUser(c *gin.Context) {
-	var param models.ListUserParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
+func ListUser(c *gin.Context, req *models.ListUserParam) (*models.ListUserData, error) {
 
-	users, err := service.ListUser(&param)
+	users, total, err := service.ListUser(req)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "人员信息查询失败")
-		return
+		log.Println(err)
+		return nil, errors.New("人员信息查询失败")
 	}
 
-	common.Success(c, &models.ListUserData{Users: users})
+	return &models.ListUserData{Users: users, Total: total}, nil
 }
 
-func AddUser(c *gin.Context) {
-	var param models.AddUserParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
+func AddUser(c *gin.Context, req *models.AddUserParam) (interface{}, error) {
+	if req.User == nil {
+		log.Printf("[AddUser] req is nil, req: %+v", req)
+		return nil, errors.New(common.ParamInvalid)
 	}
-	if param.User == nil {
-		fmt.Printf("[AddUser] param is nil, param: %+v", param)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-	err := service.AddUser(param.User)
+	err := service.AddUser(req.User)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "人员信息保存失败")
-		return
+		log.Println(err)
+		return nil, errors.New("人员信息保存失败")
 	}
-	common.Success(c, nil)
+	return nil, nil
 }
 
-func UpdateUser(c *gin.Context) {
-	var param models.UpdateUserParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
+func UpdateUser(c *gin.Context, req *models.UpdateUserParam) (interface{}, error) {
+	if req.User == nil || req.User.Id == 0 {
+		log.Printf("[UpdateUser] req is nil, req: %+v", req)
+		return nil, errors.New(common.ParamInvalid)
 	}
-	if param.User == nil || param.User.Id == 0 {
-		fmt.Printf("[UpdateUser] param is nil, param: %+v", param)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-	err := service.UpdateUser(param.User)
+	err := service.UpdateUser(req.User)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "人员信息更新失败")
-		return
+		log.Println(err)
+		return nil, errors.New("人员信息更新失败")
 	}
-	common.Success(c, nil)
+	return nil, nil
 }
 
-func DeleteUser(c *gin.Context) {
-	var param models.DeleteUserParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
+func DeleteUser(c *gin.Context, req *models.DeleteUserParam) (interface{}, error) {
+	if req.UserId == 0 {
+		log.Printf("[DeleteUser] user id is nil, req: %+v", req)
+		return nil, errors.New(common.ParamInvalid)
 	}
-	if param.UserId == 0 {
-		fmt.Printf("[DeleteUser] user id is nil, param: %+v", param)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-	err := service.DeleteUser(param.UserId)
+	err := service.DeleteUser(req.UserId)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "人员信息删除失败")
-		return
+		log.Println(err)
+		return nil, errors.New("人员信息删除失败")
 	}
-	common.Success(c, nil)
+	return nil, nil
 }

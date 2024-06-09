@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"fmt"
+	"errors"
+	"log"
 	"wxcloudrun-golang/common"
 	"wxcloudrun-golang/models"
 	"wxcloudrun-golang/service"
@@ -9,62 +10,42 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ListRecord(c *gin.Context) {
-	var param models.ListRecordParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
+func ListRecord(c *gin.Context, req *models.ListRecordParam) (*models.ListRecordData, error) {
 
-	users, err := service.ListRecord(&param)
+	users, err := service.ListRecord(req)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "记录信息查询失败")
-		return
+		log.Println(err)
+		return nil, errors.New("记录信息查询失败")
 	}
 
-	common.Success(c, &models.ListRecordData{Records: users})
+	return &models.ListRecordData{Records: users}, nil
 }
 
-func AddRecord(c *gin.Context) {
-	var param models.AddRecordParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
+func AddRecord(c *gin.Context, req *models.AddRecordParam) (interface{}, error) {
+
+	if req.Record == nil {
+		log.Printf("[AddRecord] req is nil, req: %+v", req)
+		return nil, errors.New(common.ParamInvalid)
 	}
-	if param.Record == nil {
-		fmt.Printf("[AddRecord] param is nil, param: %+v", param)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-	err := service.AddRecord(param.Record)
+	err := service.AddRecord(req.Record)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "记录信息保存失败")
-		return
+		log.Println(err)
+		return nil, errors.New("记录信息保存失败")
+
 	}
-	common.Success(c, nil)
+	return nil, nil
 }
 
-func DeleteRecord(c *gin.Context) {
-	var param models.DeleteRecordParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
+func DeleteRecord(c *gin.Context, req *models.DeleteRecordParam) (interface{}, error) {
+	if req.RecordId == 0 {
+		log.Printf("[DeleteRecord] user id is nil, req: %+v", req)
+		return nil, errors.New(common.ParamInvalid)
 	}
-	if param.RecordId == 0 {
-		fmt.Printf("[DeleteRecord] user id is nil, param: %+v", param)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-	err := service.DeleteRecord(param.RecordId)
+	err := service.DeleteRecord(req.RecordId)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "记录信息删除失败")
-		return
+		log.Println(err)
+		return nil, errors.New("记录信息删除失败")
+
 	}
-	common.Success(c, nil)
+	return nil, nil
 }

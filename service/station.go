@@ -2,11 +2,10 @@ package service
 
 import (
 	"wxcloudrun-golang/db"
-	"wxcloudrun-golang/db/model"
 	"wxcloudrun-golang/models"
 )
 
-func StationVo2Dto(s *model.Station) *models.Station {
+func StationVo2Dto(s *db.Station) *models.Station {
 	if s == nil {
 		return nil
 	}
@@ -21,11 +20,11 @@ func StationVo2Dto(s *model.Station) *models.Station {
 	}
 }
 
-func StationDto2Vo(s *models.Station) *model.Station {
+func StationDto2Vo(s *models.Station) *db.Station {
 	if s == nil {
 		return nil
 	}
-	return &model.Station{
+	return &db.Station{
 		Id:        s.Id,
 		Name:      s.Name,
 		Address:   s.Address,
@@ -45,7 +44,7 @@ func ListStation(param *models.ListStationParam) ([]*models.Station, error) {
 		}
 	}
 	query = query.Where("is_delete = 0").Order("id desc")
-	stations := make([]*model.Station, 0)
+	stations := make([]*db.Station, 0)
 	err := query.Find(&stations).Error
 	if err != nil {
 		return nil, err
@@ -71,5 +70,5 @@ func DeleteStation(stationId int64) error {
 	updateFields := map[string]interface{}{
 		"is_delete": 1,
 	}
-	return db.Get().Model(&model.Station{}).Where("id = ?", stationId).Updates(updateFields).Error
+	return db.Get().Model(&db.Station{}).Where("id = ?", stationId).Updates(updateFields).Error
 }

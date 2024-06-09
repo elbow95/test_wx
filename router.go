@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"wxcloudrun-golang/common"
 	"wxcloudrun-golang/handler"
 	"wxcloudrun-golang/middleware"
 
@@ -12,8 +13,14 @@ import (
 func RouterRegister() {
 	router := gin.Default()
 
+	// no login router
+	router.POST("/app/phone", common.HandlerWrapper(handler.GetPhone))
+	router.POST("/app/user_info", common.HandlerWrapper(handler.GetUserInfo))
+	router.POST("/app/user/register", common.HandlerWrapper(handler.Register))
+
 	// 开启跨域
 	router.Use(middleware.Cors())
+	router.Use(middleware.Login())
 
 	// 404
 	router.NoRoute(func(c *gin.Context) {
@@ -24,33 +31,33 @@ func RouterRegister() {
 	{
 		user := app.Group("/user")
 		{
-			user.GET("/list", handler.ListUser)
-			user.POST("/add", handler.AddUser)
-			user.POST("/delete", handler.DeleteUser)
-			user.POST("/update", handler.UpdateUser)
+			user.POST("/list", common.HandlerWrapper(handler.ListUser))
+			user.POST("/add", common.HandlerWrapper(handler.AddUser))
+			user.POST("/delete", common.HandlerWrapper(handler.DeleteUser))
+			user.POST("/update", common.HandlerWrapper(handler.UpdateUser))
 		}
 
 		station := app.Group("/station")
 		{
-			station.GET("/list", handler.ListStation)
-			station.POST("/add", handler.AddStation)
-			station.POST("/delete", handler.DeleteStation)
-			station.POST("/update", handler.UpdateStation)
+			station.POST("/list", common.HandlerWrapper(handler.ListStation))
+			station.POST("/add", common.HandlerWrapper(handler.AddStation))
+			station.POST("/delete", common.HandlerWrapper(handler.DeleteStation))
+			station.POST("/update", common.HandlerWrapper(handler.UpdateStation))
 		}
 
 		oil := app.Group("/oil")
 		{
-			oil.GET("/list", handler.ListOil)
-			oil.POST("/add", handler.AddOil)
-			oil.POST("/delete", handler.DeleteOil)
-			oil.POST("/update", handler.UpdateOil)
+			oil.POST("/list", common.HandlerWrapper(handler.ListOil))
+			oil.POST("/add", common.HandlerWrapper(handler.AddOil))
+			oil.POST("/delete", common.HandlerWrapper(handler.DeleteOil))
+			oil.POST("/update", common.HandlerWrapper(handler.UpdateOil))
 		}
 
 		record := app.Group("/record")
 		{
-			record.GET("/list", handler.ListRecord)
-			record.POST("/add", handler.AddRecord)
-			record.POST("/delete", handler.DeleteRecord)
+			record.POST("/list", common.HandlerWrapper(handler.ListRecord))
+			record.POST("/add", common.HandlerWrapper(handler.AddRecord))
+			record.POST("/delete", common.HandlerWrapper(handler.DeleteRecord))
 		}
 	}
 

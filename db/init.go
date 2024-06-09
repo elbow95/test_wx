@@ -2,12 +2,15 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
+	"gorm.io/plugin/dbresolver"
 )
 
 var dbInstance *gorm.DB
@@ -24,20 +27,32 @@ func Init() error {
 		dataBase = "golang_demo"
 	}
 	source = fmt.Sprintf(source, user, pwd, addr, dataBase)
-	fmt.Println("start init mysql with ", source)
+	log.Println("start init mysql with ", source)
 
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second,   // Slow SQL threshold
+			LogLevel:                  logger.Silent, // Log level
+			IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
+			ParameterizedQueries:      true,          // Don't include params in the SQL log
+			Colorful:                  false,         // Disable color
+		},
+	)
 	db, err := gorm.Open(mysql.Open(source), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
-		}})
+		},
+		Logger: newLogger,
+	})
 	if err != nil {
-		fmt.Println("DB Open error,err=", err.Error())
+		log.Println("DB Open error,err=", err.Error())
 		return err
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		fmt.Println("DB Init error,err=", err.Error())
+		log.Println("DB Init error,err=", err.Error())
 		return err
 	}
 
@@ -48,13 +63,17 @@ func Init() error {
 	// 设置了连接可复用的最大时间
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	dbInstance = db
+	dbInstance = db.Debug()
 
-	fmt.Println("finish init mysql with ", source)
+	log.Println("finish init mysql with ", source)
 	return nil
 }
 
 // Get ...
 func Get() *gorm.DB {
 	return dbInstance
+}
+
+func GetWrite() *gorm.DB {
+	return dbInstance.Clauses(dbresolver.Write)
 }

@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"fmt"
+	"errors"
+	"log"
 	"wxcloudrun-golang/common"
 	"wxcloudrun-golang/models"
 	"wxcloudrun-golang/service"
@@ -9,83 +10,53 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ListOil(c *gin.Context) {
-	var param models.ListOilParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-
-	users, err := service.ListOil(&param)
+func ListOil(c *gin.Context, req *models.ListOilParam) (*models.ListOilData, error) {
+	users, err := service.ListOil(req)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "油品信息查询失败")
-		return
+		log.Println(err)
+		return nil, errors.New("油品信息查询失败")
 	}
 
-	common.Success(c, &models.ListOilData{Oils: users})
+	return &models.ListOilData{Oils: users}, nil
 }
 
-func AddOil(c *gin.Context) {
-	var param models.AddOilParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
+func AddOil(c *gin.Context, req *models.AddOilParam) (interface{}, error) {
+
+	if req.Oil == nil {
+		log.Printf("[AddOil] req is nil, req: %+v", req)
+		return nil, errors.New(common.ParamInvalid)
 	}
-	if param.Oil == nil {
-		fmt.Printf("[AddOil] param is nil, param: %+v", param)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-	err := service.AddOil(param.Oil)
+	err := service.AddOil(req.Oil)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "油品信息保存失败")
-		return
+		log.Println(err)
+		return nil, err
 	}
-	common.Success(c, nil)
+	return nil, nil
 }
 
-func UpdateOil(c *gin.Context) {
-	var param models.UpdateOilParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
+func UpdateOil(c *gin.Context, req *models.UpdateOilParam) (interface{}, error) {
+	if req.Oil == nil || req.Oil.Id == 0 {
+		log.Printf("[UpdateOil] req is nil, req: %+v", req)
+		return nil, errors.New(common.ParamInvalid)
 	}
-	if param.Oil == nil || param.Oil.Id == 0 {
-		fmt.Printf("[UpdateOil] param is nil, param: %+v", param)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-	err := service.UpdateOil(param.Oil)
+	err := service.UpdateOil(req.Oil)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "油品信息更新失败")
-		return
+		log.Println(err)
+		return nil, errors.New("油品信息更新失败")
 	}
-	common.Success(c, nil)
+	return nil, nil
 }
 
-func DeleteOil(c *gin.Context) {
-	var param models.DeleteOilParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
+func DeleteOil(c *gin.Context, req *models.DeleteOilParam) (interface{}, error) {
+
+	if req.OilId == 0 {
+		log.Printf("[DeleteOil] user id is nil, req: %+v", req)
+		return nil, errors.New(common.ParamInvalid)
 	}
-	if param.OilId == 0 {
-		fmt.Printf("[DeleteOil] user id is nil, param: %+v", param)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-	err := service.DeleteOil(param.OilId)
+	err := service.DeleteOil(req.OilId)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "油品信息删除失败")
-		return
+		log.Println(err)
+		return nil, errors.New("油品信息删除失败")
 	}
-	common.Success(c, nil)
+	return nil, nil
 }

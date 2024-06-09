@@ -31,5 +31,5 @@ func Failed(c *gin.Context, message string) {
 // SuccessPage 请求成功返回分页结果
 func SuccessPage(message string, data interface{}, rows int64, c *gin.Context) {
 	page := &PageResult{Total: rows, List: data}
-	c.JSON(http.StatusOK, Response{200, message, page})
+	c.JSON(http.StatusOK, page)
 }

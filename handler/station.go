@@ -1,82 +1,52 @@
 package handler
 
 import (
-	"fmt"
-	"wxcloudrun-golang/common"
+	"errors"
+	"log"
 	"wxcloudrun-golang/models"
 	"wxcloudrun-golang/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-func ListStation(c *gin.Context) {
-	var param models.ListStationParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-
-	stations, err := service.ListStation(&param)
+func ListStation(c *gin.Context, req *models.ListStationParam) (*models.ListStationData, error) {
+	stations, err := service.ListStation(req)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "车站信息查询失败")
-		return
+		log.Println(err)
+		return nil, errors.New("车站信息查询失败")
 	}
 
-	common.Success(c, &models.ListStationData{Stations: stations})
+	return &models.ListStationData{Stations: stations}, nil
 }
 
-func AddStation(c *gin.Context) {
-	var param models.AddStationParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
-
-	err := service.AddStation(param.Station)
+func AddStation(c *gin.Context, req *models.AddStationParam) (interface{}, error) {
+	err := service.AddStation(req.Station)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "车站信息添加失败")
-		return
+		log.Println(err)
+		return nil, errors.New("车站信息添加失败")
 	}
 
-	common.Success(c, nil)
+	return nil, nil
 }
 
-func UpdateStation(c *gin.Context) {
-	var param models.UpdateStationParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
+func UpdateStation(c *gin.Context, req *models.UpdateStationParam) (interface{}, error) {
 
-	err := service.UpdateStation(param.Station)
+	err := service.UpdateStation(req.Station)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "车站信息更新失败")
-		return
+		log.Println(err)
+		return nil, errors.New("车站信息更新失败")
 	}
 
-	common.Success(c, nil)
+	return nil, nil
 }
 
-func DeleteStation(c *gin.Context) {
-	var param models.DeleteStationParam
-	if err := c.ShouldBind(&param); err != nil {
-		fmt.Println(err)
-		common.Failed(c, common.ParamInvalid)
-		return
-	}
+func DeleteStation(c *gin.Context, req *models.DeleteStationParam) (interface{}, error) {
 
-	err := service.DeleteStation(param.StationId)
+	err := service.DeleteStation(req.StationId)
 	if err != nil {
-		fmt.Println(err)
-		common.Failed(c, "车站信息删除失败")
-		return
+		log.Println(err)
+		return nil, errors.New("车站信息删除失败")
 	}
 
-	common.Success(c, nil)
+	return nil, nil
 }

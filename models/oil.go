@@ -1,18 +1,19 @@
 package models
 
 type Oil struct {
-	Id         int64  `json:"id"`
-	Name       string `json:"name"`
-	StationId  int64  `json:"station_id"`
-	Price      int64  `json:"price"`
-	CreateTime string `json:"create_time"`
-	UpdateTime string `json:"update_time"`
+	Id          int64  `json:"id"`
+	Name        string `json:"name"`
+	StationId   int64  `json:"station_id"`
+	StationName string `json:"station_name"`
+	Price       int64  `json:"price"`
+	CreateTime  string `json:"create_time"`
+	UpdateTime  string `json:"update_time"`
 }
 
 type ListOilParam struct {
-	Ids        []int64 `json:"ids"`
-	StationIds []int64 `json:"station_ids"`
-	Name       string  `json:"name"`
+	Ids        []int64 `json:"ids" query:"ids"`
+	StationIds []int64 `json:"station_ids" query:"station_ids"`
+	Name       string  `json:"name" query:"name"`
 }
 
 type ListOilData struct {
