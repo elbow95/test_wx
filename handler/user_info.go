@@ -20,6 +20,7 @@ type GetUserInfoData struct {
 func GetUserInfo(c *gin.Context, req *GetUserInfoParam) (*GetUserInfoData, error) {
 
 	openId := c.Request.Header.Get("X-Wx-Openid")
+	fmt.Printf("open_id: %s\n", openId)
 	if openId == "" {
 		return nil, errors.New("用户未登录")
 	}

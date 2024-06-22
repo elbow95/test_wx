@@ -57,6 +57,7 @@ func RouterRegister() {
 		{
 			record.POST("/list", common.HandlerWrapper(handler.ListRecord))
 			record.POST("/add", common.HandlerWrapper(handler.AddRecord))
+			record.POST("/update", common.HandlerWrapper(handler.UpdateRecord))
 			record.POST("/delete", common.HandlerWrapper(handler.DeleteRecord))
 		}
 	}

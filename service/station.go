@@ -1,8 +1,13 @@
 package service
 
 import (
+	"errors"
+	"fmt"
 	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/models"
+	"wxcloudrun-golang/util"
+
+	"gorm.io/gorm"
 )
 
 func StationVo2Dto(s *db.Station) *models.Station {
@@ -10,7 +15,7 @@ func StationVo2Dto(s *db.Station) *models.Station {
 		return nil
 	}
 	return &models.Station{
-		Id:         s.Id,
+		Id:         util.Int642Str(s.Id),
 		Name:       s.Name,
 		Address:    s.Address,
 		Longitude:  s.Longitude,
@@ -25,7 +30,7 @@ func StationDto2Vo(s *models.Station) *db.Station {
 		return nil
 	}
 	return &db.Station{
-		Id:        s.Id,
+		Id:        util.Str2Int64(s.Id),
 		Name:      s.Name,
 		Address:   s.Address,
 		Longitude: s.Longitude,
@@ -37,7 +42,7 @@ func ListStation(param *models.ListStationParam) ([]*models.Station, error) {
 	query := db.Get()
 	if param != nil {
 		if len(param.Ids) > 0 {
-			query = query.Where("id in (?)", param.Ids)
+			query = query.Where("id in (?)", util.StrSliceToInt64(param.Ids))
 		}
 		if param.Name != "" {
 			query = query.Where("name like %?%", param.Name)
@@ -61,12 +66,42 @@ func AddStation(s *models.Station) error {
 	return db.Get().Create(sVo).Error
 }
 
-func UpdateStation(s *models.Station) error {
-	sVo := StationDto2Vo(s)
-	return db.Get().Save(sVo).Error
+func UpdateStation(param *models.UpdateStationParam) error {
+	stationId := util.Str2Int64(param.StationId)
+	if stationId == 0 {
+		return errors.New("未指定加油站")
+	}
+	existStation := &db.Station{}
+	found, err := db.FindOne(&existStation, func(db *gorm.DB) *gorm.DB {
+		return db.Where("id = ?", stationId).Where("is_delete = 0")
+	})
+	if err != nil {
+		fmt.Printf("查询加油站失败,err: %v", err)
+		return errors.New("查询加油站失败")
+	}
+	if !found {
+		return errors.New("指定加油站不存在")
+	}
+	if param.Name != nil && *param.Name != "" {
+		existStation.Name = *param.Name
+	}
+	if param.Address != nil && *param.Address != "" {
+		existStation.Address = *param.Address
+	}
+	if param.Longitude != nil && *param.Longitude > 0.0 {
+		existStation.Longitude = *param.Longitude
+	}
+	if param.Latitude != nil && *param.Latitude > 0.0 {
+		existStation.Latitude = *param.Latitude
+	}
+	return db.Get().Save(existStation).Error
 }
 
-func DeleteStation(stationId int64) error {
+func DeleteStation(stationIdStr string) error {
+	stationId := util.Str2Int64(stationIdStr)
+	if stationId == 0 {
+		return errors.New("未指定加油站")
+	}
 	updateFields := map[string]interface{}{
 		"is_delete": 1,
 	}

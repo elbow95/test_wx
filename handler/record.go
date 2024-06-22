@@ -12,13 +12,13 @@ import (
 
 func ListRecord(c *gin.Context, req *models.ListRecordParam) (*models.ListRecordData, error) {
 
-	users, err := service.ListRecord(req)
+	users, total, err := service.ListRecord(req)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("记录信息查询失败")
+		return nil, err
 	}
 
-	return &models.ListRecordData{Records: users}, nil
+	return &models.ListRecordData{Records: users, Total: total}, nil
 }
 
 func AddRecord(c *gin.Context, req *models.AddRecordParam) (interface{}, error) {
@@ -30,22 +30,26 @@ func AddRecord(c *gin.Context, req *models.AddRecordParam) (interface{}, error) 
 	err := service.AddRecord(req.Record)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("记录信息保存失败")
+		return nil, err
 
 	}
 	return nil, nil
 }
 
-func DeleteRecord(c *gin.Context, req *models.DeleteRecordParam) (interface{}, error) {
-	if req.RecordId == 0 {
-		log.Printf("[DeleteRecord] user id is nil, req: %+v", req)
-		return nil, errors.New(common.ParamInvalid)
+func UpdateRecord(c *gin.Context, req *models.UpdateRecrodParam) (interface{}, error) {
+	err := service.UpdateRecord(req)
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
+	return nil, nil
+}
+
+func DeleteRecord(c *gin.Context, req *models.DeleteRecordParam) (interface{}, error) {
 	err := service.DeleteRecord(req.RecordId)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("记录信息删除失败")
-
+		return nil, err
 	}
 	return nil, nil
 }

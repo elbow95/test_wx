@@ -14,7 +14,7 @@ func ListOil(c *gin.Context, req *models.ListOilParam) (*models.ListOilData, err
 	users, err := service.ListOil(req)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("油品信息查询失败")
+		return nil, err
 	}
 
 	return &models.ListOilData{Oils: users}, nil
@@ -35,28 +35,19 @@ func AddOil(c *gin.Context, req *models.AddOilParam) (interface{}, error) {
 }
 
 func UpdateOil(c *gin.Context, req *models.UpdateOilParam) (interface{}, error) {
-	if req.Oil == nil || req.Oil.Id == 0 {
-		log.Printf("[UpdateOil] req is nil, req: %+v", req)
-		return nil, errors.New(common.ParamInvalid)
-	}
-	err := service.UpdateOil(req.Oil)
+	err := service.UpdateOil(req)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("油品信息更新失败")
+		return nil, err
 	}
 	return nil, nil
 }
 
 func DeleteOil(c *gin.Context, req *models.DeleteOilParam) (interface{}, error) {
-
-	if req.OilId == 0 {
-		log.Printf("[DeleteOil] user id is nil, req: %+v", req)
-		return nil, errors.New(common.ParamInvalid)
-	}
 	err := service.DeleteOil(req.OilId)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("油品信息删除失败")
+		return nil, err
 	}
 	return nil, nil
 }

@@ -1,9 +1,9 @@
 package models
 
 type Oil struct {
-	Id          int64  `json:"id"`
+	Id          string `json:"id"`
 	Name        string `json:"name"`
-	StationId   int64  `json:"station_id"`
+	StationId   string `json:"station_id"`
 	StationName string `json:"station_name"`
 	Price       int64  `json:"price"`
 	CreateTime  string `json:"create_time"`
@@ -11,9 +11,9 @@ type Oil struct {
 }
 
 type ListOilParam struct {
-	Ids        []int64 `json:"ids" query:"ids"`
-	StationIds []int64 `json:"station_ids" query:"station_ids"`
-	Name       string  `json:"name" query:"name"`
+	Ids        []string `json:"ids" query:"ids"`
+	StationIds []string `json:"station_ids" query:"station_ids"`
+	Name       string   `json:"name" query:"name"`
 }
 
 type ListOilData struct {
@@ -25,9 +25,10 @@ type AddOilParam struct {
 }
 
 type UpdateOilParam struct {
-	Oil *Oil `json:"oil"`
+	OilId string `json:"oil_id"`
+	Price *int64 `json:"price"`
 }
 
 type DeleteOilParam struct {
-	OilId int64 `json:"oil_id"`
+	OilId string `json:"oil_id"`
 }

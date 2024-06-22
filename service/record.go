@@ -2,12 +2,14 @@ package service
 
 import (
 	"errors"
-	"log"
+	"fmt"
 	"sync"
 	"time"
 	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/models"
 	"wxcloudrun-golang/util"
+
+	"gorm.io/gorm"
 )
 
 func RecordVo2Dto(r *db.Record, stationMap map[int64]*db.Station, staffMap map[int64]*db.User, oilMap map[int64]*db.Oil) *models.Record {
@@ -15,14 +17,14 @@ func RecordVo2Dto(r *db.Record, stationMap map[int64]*db.Station, staffMap map[i
 		return nil
 	}
 	record := &models.Record{
-		Id:          r.Id,
-		StationId:   r.StationId,
-		OilId:       r.OilId,
-		StaffId:     r.StaffId,
+		Id:          util.Int642Str(r.Id),
+		StationId:   util.Int642Str(r.StationId),
+		OilId:       util.Int642Str(r.OilId),
+		StaffId:     util.Int642Str(r.StaffId),
 		Price:       r.Price,
 		Liter:       r.Liter,
 		Amount:      r.Amount,
-		DriverId:    r.DriverId,
+		DriverId:    util.Int642Str(r.DriverId),
 		DriverName:  r.DriverName,
 		DriverPhone: r.DriverPhone,
 		CreateTime:  r.CreateTime.Format("2006-01-02 15:04:05"),
@@ -45,33 +47,33 @@ func RecordDto2Vo(r *models.Record) *db.Record {
 		return nil
 	}
 	return &db.Record{
-		Id:          r.Id,
-		StationId:   r.StationId,
-		OilId:       r.OilId,
-		StaffId:     r.StaffId,
+		Id:          util.Str2Int64(r.Id),
+		StationId:   util.Str2Int64(r.StationId),
+		OilId:       util.Str2Int64(r.OilId),
+		StaffId:     util.Str2Int64(r.StaffId),
 		Price:       r.Price,
 		Liter:       r.Liter,
 		Amount:      r.Amount,
-		DriverId:    r.DriverId,
+		DriverId:    util.Str2Int64(r.DriverId),
 		DriverName:  r.DriverName,
 		DriverPhone: r.DriverPhone,
 	}
 }
 
-func ListRecord(param *models.ListRecordParam) ([]*models.Record, error) {
+func ListRecord(param *models.ListRecordParam) ([]*models.Record, int64, error) {
 	query := db.Get()
 	if param != nil {
 		if len(param.Ids) > 0 {
-			query = query.Where("id in (?)", param.Ids)
+			query = query.Where("id in (?)", util.StrSliceToInt64(param.Ids))
 		}
 		if len(param.OilIds) > 0 {
-			query = query.Where("oil_id in (?)", param.OilIds)
+			query = query.Where("oil_id in (?)", util.StrSliceToInt64(param.OilIds))
 		}
 		if len(param.StaffIds) > 0 {
-			query = query.Where("staff_id in (?)", param.StaffIds)
+			query = query.Where("staff_id in (?)", util.StrSliceToInt64(param.StaffIds))
 		}
 		if len(param.StationIds) > 0 {
-			query = query.Where("station_id in (?)", param.StationIds)
+			query = query.Where("station_id in (?)", util.StrSliceToInt64(param.StationIds))
 		}
 		if param.CreateTime != nil {
 			if param.CreateTime.Left > 0 {
@@ -83,10 +85,20 @@ func ListRecord(param *models.ListRecordParam) ([]*models.Record, error) {
 		}
 	}
 	query = query.Where("is_delete = 0").Order("id desc")
-	records := make([]*db.Record, 0)
-	err := query.Find(&records, 0).Error
+	var (
+		total int64
+	)
+	err := query.Model(&db.Record{}).Count(&total).Error
 	if err != nil {
-		return nil, err
+		fmt.Printf("查询记录失败,err:%v", err)
+		return nil, 0, errors.New("查询记录失败")
+	}
+	records := make([]*db.Record, 0)
+	query = db.AttachPage(query, param.Page, param.PageSize)
+	err = query.Find(&records).Error
+	if err != nil {
+		fmt.Printf("查询记录失败,err:%v", err)
+		return nil, 0, errors.New("查询记录失败")
 	}
 
 	var (
@@ -137,17 +149,17 @@ func ListRecord(param *models.ListRecordParam) ([]*models.Record, error) {
 		results = append(results, RecordVo2Dto(r, stationMap, staffMap, oilMap))
 	}
 
-	return results, nil
+	return results, total, nil
 }
 
 func AddRecord(r *models.Record) error {
-	if r.StationId == 0 {
+	if util.Str2Int64(r.StationId) == 0 {
 		return errors.New("未指定加油站")
 	}
-	if r.StaffId == 0 {
+	if util.Str2Int64(r.StaffId) == 0 {
 		return errors.New("未指定加油员")
 	}
-	if r.OilId == 0 {
+	if util.Str2Int64(r.OilId) == 0 {
 		return errors.New("未指定油品")
 	}
 	if r.Price <= 0 {
@@ -169,26 +181,56 @@ func AddRecord(r *models.Record) error {
 		station = &db.Station{}
 		staff   = &db.User{}
 		oil     = &db.Oil{}
+		wg      sync.WaitGroup
 	)
-	if err := db.Get().Where("id = ?", r.StationId).Where("is_delete = 0").First(&station); err != nil {
-		log.Printf("[AddRecord] get station failed, err: %+v", err)
-		return errors.New("获取油站信息失败")
-	} else if station == nil || station.Id == 0 {
-		log.Printf("[AddRecord] station not found, id: %+d", r.StationId)
-		return errors.New("指定油站不存在")
+	wg.Add(1)
+	util.GoWithDefaultRecovery(func() {
+		defer wg.Done()
+		found, err := db.FindOne(&station, func(db *gorm.DB) *gorm.DB {
+			return db.Where("id = ?", r.StationId).Where("is_delete = 0")
+		})
+		if err != nil {
+			fmt.Printf("获取加油站信息失败, err: %+v", err)
+			station = nil
+		} else if !found {
+			station = nil
+		}
+	})
+	wg.Add(1)
+	util.GoWithDefaultRecovery(func() {
+		defer wg.Done()
+		found, err := db.FindOne(&staff, func(db *gorm.DB) *gorm.DB {
+			return db.Where("id = ?", r.StaffId).Where("is_delete = 0")
+		})
+		if err != nil {
+			fmt.Printf("获取加油员信息失败, err: %+v", err)
+			staff = nil
+		} else if !found {
+			staff = nil
+		}
+	})
+	wg.Add(1)
+	util.GoWithDefaultRecovery(func() {
+		defer wg.Done()
+		found, err := db.FindOne(&oil, func(db *gorm.DB) *gorm.DB {
+			return db.Where("id = ?", r.OilId).Where("is_delete = 0")
+		})
+		if err != nil {
+			fmt.Printf("获取油品信息失败, err: %+v", err)
+			oil = nil
+		} else if !found {
+			oil = nil
+		}
+	})
+	wg.Wait()
+
+	if station == nil {
+		return errors.New("指定加油站不存在")
 	}
-	if err := db.Get().Where("id = ?", r.StaffId).Where("is_delete = 0").First(&staff); err != nil {
-		log.Printf("[AddRecord] get staff failed, err: %+v", err)
-		return errors.New("获取加油员信息失败")
-	} else if staff == nil || staff.Id == 0 {
-		log.Printf("[AddRecord] staff not found, id: %+d", r.StaffId)
+	if staff == nil {
 		return errors.New("指定加油员不存在")
 	}
-	if err := db.Get().Where("id = ?", r.OilId).Where("is_delete = 0").First(&oil); err != nil {
-		log.Printf("[AddRecord] get oil failed, err: %+v", err)
-		return errors.New("获取油品信息失败")
-	} else if oil == nil || oil.Id == 0 {
-		log.Printf("[AddRecord] oil not found, id: %+d", r.OilId)
+	if oil == nil {
 		return errors.New("指定油品不存在")
 	}
 
@@ -196,7 +238,58 @@ func AddRecord(r *models.Record) error {
 	return db.Get().Create(rVo).Error
 }
 
-func DeleteRecord(recordId int64) error {
+func UpdateRecord(param *models.UpdateRecrodParam) error {
+	recordId := util.Str2Int64(param.RecordId)
+	if recordId == 0 {
+		return errors.New("指定加油记录不存在")
+	}
+	existRecord := &db.Record{}
+	found, err := db.FindOne(&existRecord, func(db *gorm.DB) *gorm.DB {
+		return db.Where("id = ?", recordId).Where("is_delete = 0")
+	})
+	if err != nil {
+		fmt.Printf("获取加油记录失败, err: %+v", err)
+		return errors.New("获取加油记录失败")
+	}
+	if !found {
+		return errors.New("加油记录未找到")
+	}
+	if param.OilId != nil && util.Str2Int64(*param.OilId) > 0 {
+		oil := &db.Oil{}
+		found, err = db.FindOne(&oil, func(db *gorm.DB) *gorm.DB {
+			return db.Where("id = ?", util.Str2Int64(*param.OilId)).Where("is_delete = 0")
+		})
+		if err != nil {
+			fmt.Printf("获取油品信息失败, err: %+v", err)
+			return errors.New("获取油品信息失败")
+		}
+		if !found {
+			return errors.New("油品信息未找到")
+		}
+	}
+	if param.Price != nil && *param.Price > 0 {
+		existRecord.Price = *param.Price
+	}
+	if param.Liter != nil && *param.Liter > 0 {
+		existRecord.Liter = *param.Liter
+	}
+	if param.Amount != nil && *param.Amount > 0 {
+		existRecord.Amount = *param.Amount
+	}
+	if param.DriverName != nil && *param.DriverName != "" {
+		existRecord.DriverName = *param.DriverName
+	}
+	if param.DriverPhone != nil && *param.DriverPhone != "" {
+		existRecord.DriverPhone = *param.DriverPhone
+	}
+	return db.Get().Save(existRecord).Error
+}
+
+func DeleteRecord(recordIdStr string) error {
+	recordId := util.Str2Int64(recordIdStr)
+	if recordId == 0 {
+		return errors.New("未指定加油记录")
+	}
 	updateFields := map[string]interface{}{
 		"is_delete": 1,
 	}

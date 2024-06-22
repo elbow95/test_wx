@@ -1,7 +1,7 @@
 package models
 
 type Station struct {
-	Id         int64   `json:"id"`
+	Id         string  `json:"id"`
 	Name       string  `json:"name"`
 	Address    string  `json:"address"`
 	Longitude  float64 `json:"longitude"`
@@ -11,8 +11,8 @@ type Station struct {
 }
 
 type ListStationParam struct {
-	Ids  []int64 `json:"ids" query:"ids"`
-	Name string  `json:"name" query:"name"`
+	Ids  []string `json:"ids" query:"ids"`
+	Name string   `json:"name" query:"name"`
 }
 
 type ListStationData struct {
@@ -24,9 +24,13 @@ type AddStationParam struct {
 }
 
 type DeleteStationParam struct {
-	StationId int64 `json:"station_id"`
+	StationId string `json:"station_id"`
 }
 
 type UpdateStationParam struct {
-	Station *Station `json:"station"`
+	StationId string   `json:"station_id"`
+	Name      *string  `json:"name"`
+	Address   *string  `json:"address"`
+	Longitude *float64 `json:"longitude"`
+	Latitude  *float64 `json:"latitude"`
 }

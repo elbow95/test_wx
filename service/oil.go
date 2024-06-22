@@ -5,16 +5,19 @@ import (
 	"log"
 	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/models"
+	"wxcloudrun-golang/util"
+
+	"gorm.io/gorm"
 )
 
 func ListOil(param *models.ListOilParam) ([]*models.Oil, error) {
 	query := db.Get()
 	if param != nil {
 		if len(param.Ids) > 0 {
-			query = query.Where("id in (?)", param.Ids)
+			query = query.Where("id in (?)", util.StrSliceToInt64(param.Ids))
 		}
 		if len(param.StationIds) > 0 {
-			query = query.Where("station_id in (?)", param.StationIds)
+			query = query.Where("station_id in (?)", util.StrSliceToInt64(param.StationIds))
 		}
 		if param.Name != "" {
 			query = query.Where("name like %?%", param.Name)
@@ -54,14 +57,14 @@ func OilVo2Dto(o *db.Oil, sMap map[int64]*db.Station) *models.Oil {
 		return nil
 	}
 	oil := &models.Oil{
-		Id:         o.Id,
+		Id:         util.Int642Str(o.Id),
 		Name:       o.Name,
-		StationId:  o.StationId,
+		StationId:  util.Int642Str(o.StationId),
 		Price:      o.Price,
 		CreateTime: o.CreateTime.Format("2006-01-02 15:04:05"),
 		UpdateTime: o.UpdateTime.Format("2006-01-02 15:04:05"),
 	}
-	if s, ok := sMap[oil.StationId]; ok {
+	if s, ok := sMap[o.StationId]; ok {
 		oil.StationName = s.Name
 	}
 	return oil
@@ -72,35 +75,72 @@ func OilDto2Vo(o *models.Oil) *db.Oil {
 		return nil
 	}
 	return &db.Oil{
-		Id:        o.Id,
+		Id:        util.Str2Int64(o.Id),
 		Name:      o.Name,
-		StationId: o.StationId,
+		StationId: util.Str2Int64(o.StationId),
 		Price:     o.Price,
 	}
 }
 
 func AddOil(s *models.Oil) error {
-	if s.StationId == 0 {
+	stationId := util.Str2Int64(s.StationId)
+	if stationId == 0 {
 		return errors.New("添加油品需要指定加油站")
 	}
-	stations := make([]*db.Oil, 0)
-	if err := db.Get().Where("id = ?", s.StationId).Find(&stations).Error; err != nil {
+
+	station := &db.Station{}
+	found, err := db.FindOne(&station, func(db *gorm.DB) *gorm.DB {
+		return db.Where("id = ?", stationId).Where("is_delete = 0")
+	})
+	if err != nil {
 		log.Printf("[AddOil] get station failed, err: %+v", err)
 		return errors.New("查找加油站失败")
-	} else if len(stations) == 0 {
+	} else if !found {
 		return errors.New("指定的加油站不存在")
+	}
+	oil := &db.Oil{}
+	found, err = db.FindOne(&oil, func(db *gorm.DB) *gorm.DB {
+		return db.Where("name = ?", s.Name).Where("station_id = ?", stationId).Where("is_delete = 0")
+	})
+	if err != nil {
+		log.Printf("[AddOil] get oil failed, err: %+v", err)
+		return errors.New("查找油品失败")
+	} else if found {
+		return errors.New("该加油站已有同名油品")
 	}
 
 	uVo := OilDto2Vo(s)
 	return db.Get().Create(uVo).Error
 }
 
-func UpdateOil(s *models.Oil) error {
-	uVo := OilDto2Vo(s)
-	return db.Get().Save(uVo).Error
+func UpdateOil(param *models.UpdateOilParam) error {
+	oilId := util.Str2Int64(param.OilId)
+	if oilId == 0 {
+		return errors.New("未指定油品")
+	}
+	if param.Price == nil {
+		return nil
+	}
+	oil := &db.Oil{}
+	found, err := db.FindOne(&oil, func(db *gorm.DB) *gorm.DB {
+		return db.Where("id = ?", oilId).Where("is_delete = 0")
+	})
+	if err != nil {
+		log.Printf("[UpdateOil] get oil failed, err: %+v", err)
+		return errors.New("查找油品失败")
+	} else if !found {
+		return errors.New("指定的油品不存在")
+	}
+	oil.Price = *param.Price
+
+	return db.Get().Save(oil).Error
 }
 
-func DeleteOil(oilId int64) error {
+func DeleteOil(oilIdStr string) error {
+	oilId := util.Str2Int64(oilIdStr)
+	if oilId == 0 {
+		return errors.New("未指定油品")
+	}
 	updateFields := map[string]interface{}{
 		"is_delete": 1,
 	}

@@ -1,17 +1,17 @@
 package models
 
 type Record struct {
-	Id          int64  `json:"id"`
-	StationId   int64  `json:"station_id"`
+	Id          string `json:"id"`
+	StationId   string `json:"station_id"`
 	StationName string `json:"station_name"`
-	OilId       int64  `json:"oil_id"`
+	OilId       string `json:"oil_id"`
 	OilName     string `json:"oil_name"`
-	StaffId     int64  `json:"staff_id"`
+	StaffId     string `json:"staff_id"`
 	StaffName   string `json:"staff_name"`
 	Price       int64  `json:"price"`
 	Liter       int64  `json:"liter"`
 	Amount      int64  `json:"amount"`
-	DriverId    int64  `json:"driver_id"`
+	DriverId    string `json:"driver_id"`
 	DriverName  string `json:"driver_name"`
 	DriverPhone string `json:"driver_phone"`
 	CreateTime  string `json:"create_time"`
@@ -24,21 +24,34 @@ type RangeInt64 struct {
 }
 
 type ListRecordParam struct {
-	Ids        []int64     `json:"ids" query:"ids"`
-	StationIds []int64     `json:"station_ids" query:"station_ids"`
-	OilIds     []int64     `json:"oil_ids" query:"oil_ids"`
-	StaffIds   []int64     `json:"staff_ids" query:"staff_ids"`
+	Ids        []string    `json:"ids" query:"ids"`
+	StationIds []string    `json:"station_ids" query:"station_ids"`
+	OilIds     []string    `json:"oil_ids" query:"oil_ids"`
+	StaffIds   []string    `json:"staff_ids" query:"staff_ids"`
 	CreateTime *RangeInt64 `json:"create_time" query:"create_time"`
+	Page       int32       `json:"page" query:"page"`
+	PageSize   int32       `json:"page_size" query:"page_size"`
 }
 
 type ListRecordData struct {
 	Records []*Record `json:"records"`
+	Total   int64     `json:"total"`
 }
 
 type AddRecordParam struct {
 	Record *Record `json:"record"`
 }
 
+type UpdateRecrodParam struct {
+	RecordId    string  `json:"record_id"`
+	OilId       *string `json:"oil_id"`
+	Price       *int64  `json:"price"`
+	Liter       *int64  `json:"Liter"`
+	Amount      *int64  `json:"amount"`
+	DriverName  *string `json:"driver_name"`
+	DriverPhone *string `json:"driver_phone"`
+}
+
 type DeleteRecordParam struct {
-	RecordId int64 `json:"record_id"`
+	RecordId string `json:"record_id"`
 }

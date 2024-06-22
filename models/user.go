@@ -1,11 +1,11 @@
 package models
 
 type User struct {
-	Id          int64  `json:"id"`
+	Id          string `json:"id"`
 	OpenId      string `json:"open_id"`
 	Name        string `json:"name"`
 	Type        int    `json:"type"`
-	StationiId  int64  `json:"station_id"`
+	StationId   string `json:"station_id"`
 	StationName string `json:"station_name"`
 	Phone       string `json:"phone"`
 	PlateNumber string `json:"plate_number"`
@@ -20,14 +20,14 @@ type User struct {
 }
 
 type ListUserParam struct {
-	Ids         []int64 `json:"ids" query:"ids"`
-	StationIds  []int64 `json:"station_ids" query:"station_ids"`
-	Name        string  `json:"name" query:"name"`
-	Types       []int   `json:"types" query:"types"`
-	Phone       string  `json:"phone" query:"phone"`
-	PlateNumber string  `json:"plate_number" query:"plate_number"`
-	Page        int32   `json:"page"`
-	PageSize    int32   `json:"page_size"`
+	UserIds     []string `json:"user_ids" query:"user_ids"`
+	StationIds  []string `json:"station_ids" query:"station_ids"`
+	Name        string   `json:"name" query:"name"`
+	Types       []int    `json:"types" query:"types"`
+	Phone       string   `json:"phone" query:"phone"`
+	PlateNumber string   `json:"plate_number" query:"plate_number"`
+	Page        int32    `json:"page"`
+	PageSize    int32    `json:"page_size"`
 }
 
 type ListUserData struct {
@@ -40,9 +40,15 @@ type AddUserParam struct {
 }
 
 type UpdateUserParam struct {
-	User *User `json:"user"`
+	UserId      string  `json:"user_id"`
+	Name        *string `json:"name"`
+	StationId   *string `json:"station_id"`
+	Phone       *string `json:"phone"`
+	PlateNumber *string `json:"plate_number"`
+	Company     *string `json:"company"`
+	License     *string `json:"license"`
 }
 
 type DeleteUserParam struct {
-	UserId int64 `json:"user_id"`
+	UserId string `json:"user_id"`
 }
