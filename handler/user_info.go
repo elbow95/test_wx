@@ -42,6 +42,6 @@ func GetUserInfo(c *gin.Context, req *GetUserInfoParam) (*GetUserInfoData, error
 		return &GetUserInfoData{User: userData}, nil
 	} else {
 		// 用户不存在，走登录环节
-		return &GetUserInfoData{User: &models.User{}}, nil
+		return &GetUserInfoData{User: &models.User{Id: "0"}}, nil
 	}
 }
