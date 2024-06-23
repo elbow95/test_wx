@@ -17,6 +17,7 @@ func StationVo2Dto(s *db.Station) *models.Station {
 	return &models.Station{
 		Id:         util.Int642Str(s.Id),
 		Name:       s.Name,
+		Mobile:     s.Mobile,
 		Address:    s.Address,
 		Longitude:  s.Longitude,
 		Latitude:   s.Latitude,
@@ -32,14 +33,15 @@ func StationDto2Vo(s *models.Station) *db.Station {
 	return &db.Station{
 		Id:        util.Str2Int64(s.Id),
 		Name:      s.Name,
+		Mobile:    s.Mobile,
 		Address:   s.Address,
 		Longitude: s.Longitude,
 		Latitude:  s.Latitude,
 	}
 }
 
-func ListStation(param *models.ListStationParam) ([]*models.Station, error) {
-	query := db.Get()
+func ListStation(param *models.ListStationParam) ([]*models.Station, int64, error) {
+	query := db.GetWrite()
 	if param != nil {
 		if len(param.Ids) > 0 {
 			query = query.Where("id in (?)", util.StrSliceToInt64(param.Ids))
@@ -49,19 +51,38 @@ func ListStation(param *models.ListStationParam) ([]*models.Station, error) {
 		}
 	}
 	query = query.Where("is_delete = 0").Order("id desc")
-	stations := make([]*db.Station, 0)
-	err := query.Find(&stations).Error
+	var (
+		total int64
+	)
+	err := query.Model(&db.Station{}).Count(&total).Error
 	if err != nil {
-		return nil, err
+		fmt.Printf("get station count failed, err: %v", err)
+		return nil, 0, errors.New("查询油站数量失败")
+	}
+	stations := make([]*db.Station, 0)
+	err = query.Find(&stations).Error
+	if err != nil {
+		return nil, 0, err
 	}
 	results := make([]*models.Station, 0, len(stations))
 	for _, s := range stations {
 		results = append(results, StationVo2Dto(s))
 	}
-	return results, nil
+	return results, total, nil
 }
 
 func AddStation(s *models.Station) error {
+	station := &db.Station{}
+	found, err := db.FindOne(&station, func(db *gorm.DB) *gorm.DB {
+		return db.Where("is_delete = 0").Where("name = ?", s.Name)
+	})
+	if err != nil {
+		fmt.Printf("查询已存在加油站失败,err: %+v", err)
+		return errors.New("查询加油站失败")
+	}
+	if found {
+		return errors.New("同名加油站已存在")
+	}
 	sVo := StationDto2Vo(s)
 	return db.Get().Create(sVo).Error
 }
@@ -85,6 +106,9 @@ func UpdateStation(param *models.UpdateStationParam) error {
 	if param.Name != nil && *param.Name != "" {
 		existStation.Name = *param.Name
 	}
+	if param.Mobile != nil && *param.Mobile != "" {
+		existStation.Mobile = *param.Mobile
+	}
 	if param.Address != nil && *param.Address != "" {
 		existStation.Address = *param.Address
 	}
@@ -101,6 +125,26 @@ func DeleteStation(stationIdStr string) error {
 	stationId := util.Str2Int64(stationIdStr)
 	if stationId == 0 {
 		return errors.New("未指定加油站")
+	}
+	user := &db.User{}
+	found, err := db.FindOne(&user, func(db *gorm.DB) *gorm.DB {
+		return db.Where("station_id = ?", stationId).Where("is_delete = 0")
+	})
+	if err != nil {
+		return errors.New("查询油站关联人员失败")
+	}
+	if found {
+		return errors.New("请修改油站关联员工后重试")
+	}
+	oil := &db.Oil{}
+	found, err = db.FindOne(&oil, func(db *gorm.DB) *gorm.DB {
+		return db.Where("station_id = ?", stationId).Where("is_delete = 0")
+	})
+	if err != nil {
+		return errors.New("查询油站关联油品信息失败")
+	}
+	if found {
+		return errors.New("请删除油品关联油品后重试")
 	}
 	updateFields := map[string]interface{}{
 		"is_delete": 1,

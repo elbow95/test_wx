@@ -2,20 +2,29 @@ package handler
 
 import (
 	"log"
+	"wxcloudrun-golang/common"
+	"wxcloudrun-golang/middleware"
 	"wxcloudrun-golang/models"
 	"wxcloudrun-golang/service"
+	"wxcloudrun-golang/util"
 
 	"github.com/gin-gonic/gin"
 )
 
 func ListStation(c *gin.Context, req *models.ListStationParam) (*models.ListStationData, error) {
-	stations, err := service.ListStation(req)
+	// 获取用户油站，管理员全部、加油员自己、司机全部
+	loginUser := middleware.GetUser(c)
+
+	if len(req.Ids) == 0 && loginUser.Type == int(common.UserType_Staff) {
+		req.Ids = []string{util.Int642Str(loginUser.StationId)}
+	}
+	stations, total, err := service.ListStation(req)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	return &models.ListStationData{Stations: stations}, nil
+	return &models.ListStationData{Stations: stations, Total: total}, nil
 }
 
 func AddStation(c *gin.Context, req *models.AddStationParam) (interface{}, error) {

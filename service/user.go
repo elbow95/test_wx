@@ -61,9 +61,28 @@ func ListUser(param *models.ListUserParam) ([]*models.User, int64, error) {
 		return nil, 0, errors.New("查询用户失败")
 	}
 
+	stationsIds := make([]int64, 0)
+	stationMap := make(map[int64]*db.Station)
+	for _, u := range users {
+		stationsIds = append(stationsIds, u.StationId)
+	}
+	if len(stationsIds) > 0 {
+		stations := make([]*db.Station, 0)
+		_, err = db.FindData(&stations, func(db *gorm.DB) *gorm.DB {
+			return db.Where("id in (?)", stationsIds).Where("is_delete = 0")
+		})
+		if err != nil {
+			fmt.Printf("查询油站信息失败,err: %v", err)
+			return nil, 0, errors.New("查询油站信息失败")
+		}
+		for _, s := range stations {
+			stationMap[s.Id] = s
+		}
+	}
+
 	results := make([]*models.User, 0, len(users))
 	for _, u := range users {
-		results = append(results, UserVo2Dto(u, nil))
+		results = append(results, UserVo2Dto(u, stationMap))
 	}
 
 	return results, total, nil
@@ -88,6 +107,11 @@ func UserVo2Dto(u *db.User, stationMap map[int64]*db.Station) *models.User {
 	}
 	if station, ok := stationMap[u.StationId]; ok {
 		user.StationName = station.Name
+	}
+	if len(u.Extra) > 0 {
+		userExtra := util.UnmarshalJsonIgnoreError(u.Extra, &db.UserExtra{})
+		user.Company = userExtra.Company
+		user.License = userExtra.License
 	}
 	user.PermissionList = common.UserPermissionMap[common.UserType(user.Type)]
 	return user
@@ -142,6 +166,13 @@ func AddUser(u *models.User) error {
 	}
 
 	uVo := UserDto2Vo(u)
+	if u.Status != 0 {
+
+	} else if u.Type == int(common.UserType_Driver) {
+		uVo.Status = int(common.UserStatus_WaitVerify)
+	} else {
+		uVo.Status = int(common.UserStatus_Valid)
+	}
 	return db.Get().Create(uVo).Error
 }
 
@@ -178,6 +209,9 @@ func UpdateUser(param *models.UpdateUserParam) error {
 	}
 	if param.License != nil && *param.License != "" {
 		existUser.Extra, _ = sjson.Set(existUser.Extra, "license", *param.License)
+	}
+	if param.Status != nil && *param.Status != 0 {
+		existUser.Status = *param.Status
 	}
 
 	return db.Get().Save(existUser).Error

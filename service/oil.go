@@ -11,6 +11,24 @@ import (
 )
 
 func ListOil(param *models.ListOilParam) ([]*models.Oil, error) {
+	if len(param.StationIds) > 0 {
+		stations := make([]*db.Station, 0)
+		found, err := db.FindData(&stations, func(db *gorm.DB) *gorm.DB {
+			return db.Where("id in (?)", param.StationIds).Where("is_delete = 0")
+		})
+		if err != nil {
+			return nil, errors.New("查询油站信息失败")
+		}
+		if !found {
+			return nil, nil
+		}
+		newStationIds := make([]string, 0)
+		for _, station := range stations {
+			newStationIds = append(newStationIds, util.Int642Str(station.Id))
+		}
+		param.StationIds = newStationIds
+	}
+
 	query := db.Get()
 	if param != nil {
 		if len(param.Ids) > 0 {
@@ -145,4 +163,43 @@ func DeleteOil(oilIdStr string) error {
 		"is_delete": 1,
 	}
 	return db.Get().Model(&db.Oil{}).Where("id = ?", oilId).Updates(updateFields).Error
+}
+
+func BatchUpdateOilPrice(param *models.BatchUpdateOilPriceParam) error {
+	if len(param.Oils) == 0 {
+		return nil
+	}
+	oilIds := make([]int64, 0)
+	oilPriceMap := make(map[int64]float64)
+	for _, oil := range param.Oils {
+		if oil.Price <= 0.0 {
+			continue
+		}
+		oilPriceMap[util.Str2Int64(oil.Id)] = oil.Price
+		oilIds = append(oilIds, util.Str2Int64(oil.Id))
+	}
+	err := db.GetWrite().Transaction(func(tx *gorm.DB) error {
+		oils := make([]*db.Oil, 0)
+		_, err := db.FindData(&oils, func(db *gorm.DB) *gorm.DB {
+			return db.Where("id in (?)", oilIds)
+		})
+		if err != nil {
+			log.Fatalf("查询待更新油品信息失败，err: %v", err)
+			return errors.New("查询待更新油品失败，请重试")
+		}
+		for _, oil := range oils {
+			if err = tx.Model(&db.Oil{}).Where("id = ?", oil.Id).Updates(map[string]interface{}{
+				"price": oilPriceMap[oil.Id],
+			}).Error; err != nil {
+				log.Fatalf("更新待更新油品信息失败，err: %v", err)
+				return errors.New("更新油品信息失败，请重试")
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+
 }

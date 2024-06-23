@@ -1,21 +1,22 @@
 package models
 
 type Record struct {
-	Id          string `json:"id"`
-	StationId   string `json:"station_id"`
-	StationName string `json:"station_name"`
-	OilId       string `json:"oil_id"`
-	OilName     string `json:"oil_name"`
-	StaffId     string `json:"staff_id"`
-	StaffName   string `json:"staff_name"`
-	Price       int64  `json:"price"`
-	Liter       int64  `json:"liter"`
-	Amount      int64  `json:"amount"`
-	DriverId    string `json:"driver_id"`
-	DriverName  string `json:"driver_name"`
-	DriverPhone string `json:"driver_phone"`
-	CreateTime  string `json:"create_time"`
-	UpdateTime  string `json:"update_time"`
+	Id          string  `json:"id"`
+	StationId   string  `json:"station_id"`
+	StationName string  `json:"station_name"`
+	OilId       string  `json:"oil_id"`
+	OilName     string  `json:"oil_name"`
+	StaffId     string  `json:"staff_id"`
+	StaffName   string  `json:"staff_name"`
+	StaffPhone  string  `json:"staff_phone"`
+	Price       float64 `json:"price"`
+	Liter       float64 `json:"liter"`
+	Amount      float64 `json:"amount"`
+	DriverId    string  `json:"driver_id"`
+	DriverName  string  `json:"driver_name"`
+	DriverPhone string  `json:"driver_phone"`
+	CreateTime  string  `json:"create_time"`
+	UpdateTime  string  `json:"update_time"`
 }
 
 type RangeInt64 struct {
@@ -43,13 +44,14 @@ type AddRecordParam struct {
 }
 
 type UpdateRecrodParam struct {
-	RecordId    string  `json:"record_id"`
-	OilId       *string `json:"oil_id"`
-	Price       *int64  `json:"price"`
-	Liter       *int64  `json:"Liter"`
-	Amount      *int64  `json:"amount"`
-	DriverName  *string `json:"driver_name"`
-	DriverPhone *string `json:"driver_phone"`
+	RecordId    string   `json:"record_id"`
+	StationId   *string  `json:"station_id"`
+	OilId       *string  `json:"oil_id"`
+	Price       *float64 `json:"price"`
+	Liter       *float64 `json:"Liter"`
+	Amount      *float64 `json:"amount"`
+	DriverName  *string  `json:"driver_name"`
+	DriverPhone *string  `json:"driver_phone"`
 }
 
 type DeleteRecordParam struct {

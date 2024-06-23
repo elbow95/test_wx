@@ -47,6 +47,7 @@ type UpdateUserParam struct {
 	PlateNumber *string `json:"plate_number"`
 	Company     *string `json:"company"`
 	License     *string `json:"license"`
+	Status      *int    `json:"status"`
 }
 
 type DeleteUserParam struct {

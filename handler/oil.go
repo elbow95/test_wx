@@ -11,13 +11,13 @@ import (
 )
 
 func ListOil(c *gin.Context, req *models.ListOilParam) (*models.ListOilData, error) {
-	users, err := service.ListOil(req)
+	oils, err := service.ListOil(req)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	return &models.ListOilData{Oils: users}, nil
+	return &models.ListOilData{Oils: oils}, nil
 }
 
 func AddOil(c *gin.Context, req *models.AddOilParam) (interface{}, error) {
@@ -45,6 +45,15 @@ func UpdateOil(c *gin.Context, req *models.UpdateOilParam) (interface{}, error) 
 
 func DeleteOil(c *gin.Context, req *models.DeleteOilParam) (interface{}, error) {
 	err := service.DeleteOil(req.OilId)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return nil, nil
+}
+
+func BatchUpdateOilPrice(c *gin.Context, req *models.BatchUpdateOilPriceParam) (interface{}, error) {
+	err := service.BatchUpdateOilPrice(req)
 	if err != nil {
 		log.Println(err)
 		return nil, err

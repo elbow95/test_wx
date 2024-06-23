@@ -35,6 +35,7 @@ func RecordVo2Dto(r *db.Record, stationMap map[int64]*db.Station, staffMap map[i
 	}
 	if s, ok := staffMap[r.StaffId]; ok {
 		record.StaffName = s.Name
+		record.StaffPhone = s.Phone
 	}
 	if o, ok := oilMap[r.OilId]; ok {
 		record.OilName = o.Name
@@ -102,12 +103,12 @@ func ListRecord(param *models.ListRecordParam) ([]*models.Record, int64, error) 
 	}
 
 	var (
-		stationIds []int64
-		staffIds   []int64
-		oilIds     []int64
-		stationMap map[int64]*db.Station
-		staffMap   map[int64]*db.User
-		oilMap     map[int64]*db.Oil
+		stationIds = make([]int64, 0)
+		staffIds   = make([]int64, 0)
+		oilIds     = make([]int64, 0)
+		stationMap = make(map[int64]*db.Station)
+		staffMap   = make(map[int64]*db.User)
+		oilMap     = make(map[int64]*db.Oil)
 		wg         sync.WaitGroup
 	)
 	for _, r := range records {
@@ -119,7 +120,10 @@ func ListRecord(param *models.ListRecordParam) ([]*models.Record, int64, error) 
 	util.GoWithDefaultRecovery(func() {
 		defer wg.Done()
 		stations := make([]*db.Station, 0)
-		_ = db.Get().Where("id in (?)", stationIds).Find(&stations).Error
+		err = db.Get().Where("id in (?)", stationIds).Find(&stations).Error
+		if err != nil {
+			fmt.Printf("获取油站信息失败：err: %+v", err)
+		}
 		for _, s := range stations {
 			stationMap[s.Id] = s
 		}
@@ -128,7 +132,10 @@ func ListRecord(param *models.ListRecordParam) ([]*models.Record, int64, error) 
 	util.GoWithDefaultRecovery(func() {
 		defer wg.Done()
 		users := make([]*db.User, 0)
-		_ = db.Get().Where("id in (?)", staffIds).Find(&users).Error
+		err = db.Get().Where("id in (?)", staffIds).Find(&users).Error
+		if err != nil {
+			fmt.Printf("获取加油员信息失败：err: %+v", err)
+		}
 		for _, u := range users {
 			staffMap[u.Id] = u
 		}
@@ -137,7 +144,10 @@ func ListRecord(param *models.ListRecordParam) ([]*models.Record, int64, error) 
 	util.GoWithDefaultRecovery(func() {
 		defer wg.Done()
 		oils := make([]*db.Oil, 0)
-		_ = db.Get().Where("id in (?)", oilIds).Find(&oils).Error
+		err = db.Get().Where("id in (?)", oilIds).Find(&oils).Error
+		if err != nil {
+			fmt.Printf("获取油品信息失败：err: %+v", err)
+		}
 		for _, o := range oils {
 			oilMap[o.Id] = o
 		}
@@ -254,6 +264,20 @@ func UpdateRecord(param *models.UpdateRecrodParam) error {
 	if !found {
 		return errors.New("加油记录未找到")
 	}
+	if param.StationId != nil && util.Str2Int64(*param.StationId) > 0 {
+		station := &db.Station{}
+		found, err = db.FindOne(&station, func(db *gorm.DB) *gorm.DB {
+			return db.Where("id = ?", util.Str2Int64(*param.StationId)).Where("is_delete = 0")
+		})
+		if err != nil {
+			fmt.Printf("获取油站信息失败,err: %+v", err)
+			return errors.New("获取油站信息失败")
+		}
+		if !found {
+			return errors.New("油站信息未找到")
+		}
+		existRecord.StationId = util.Str2Int64(*param.StationId)
+	}
 	if param.OilId != nil && util.Str2Int64(*param.OilId) > 0 {
 		oil := &db.Oil{}
 		found, err = db.FindOne(&oil, func(db *gorm.DB) *gorm.DB {
@@ -266,6 +290,7 @@ func UpdateRecord(param *models.UpdateRecrodParam) error {
 		if !found {
 			return errors.New("油品信息未找到")
 		}
+		existRecord.OilId = util.Str2Int64(*param.OilId)
 	}
 	if param.Price != nil && *param.Price > 0 {
 		existRecord.Price = *param.Price

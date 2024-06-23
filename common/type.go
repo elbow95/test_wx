@@ -11,6 +11,7 @@ var (
 type UserStatus int
 
 var (
-	UserStatus_Valid      UserStatus = 1
-	UserStatus_WaitVerify UserStatus = 2
+	UserStatus_Valid        UserStatus = 1
+	UserStatus_WaitVerify   UserStatus = 2
+	UserStatus_VerifyReject UserStatus = 3 // 审批拒绝
 )

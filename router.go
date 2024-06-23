@@ -51,6 +51,7 @@ func RouterRegister() {
 			oil.POST("/add", common.HandlerWrapper(handler.AddOil))
 			oil.POST("/delete", common.HandlerWrapper(handler.DeleteOil))
 			oil.POST("/update", common.HandlerWrapper(handler.UpdateOil))
+			oil.POST("/batch_update_price", common.HandlerWrapper(handler.BatchUpdateOilPrice))
 		}
 
 		record := app.Group("/record")

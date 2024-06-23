@@ -19,7 +19,7 @@ func HandlerWrapper[Req any, Resp any](handler func(c *gin.Context, req *Req) (R
 		log.Printf("http req: %+v", util.MarshalJsonIgnoreError(req))
 		data, err := handler(c, req)
 		if err != nil {
-			Failed(c, fmt.Sprintf("%s,请稍后刷新重试", err.Error()))
+			Failed(c, err.Error())
 			return
 		}
 		log.Printf("http data: %+v", util.MarshalJsonIgnoreError(data))
